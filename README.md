@@ -6,7 +6,7 @@ Your task briefs link to files in this kit.
 
 ## Get the kit
 
-Run this once, in Git Bash, in week 1 (Launchpad task 12, when you finish the laptop):
+Run this once, in Git Bash, in week 1 (Launchpad task 12, the first part of finishing the laptop):
 
 ```bash
 cd ~ && git clone https://github.com/Anaxionai/mern-ess-kit.git
