@@ -1,0 +1,57 @@
+# MERN-ESS cloud lab: the database the course uses, on your laptop.
+#
+# Run these in Git Bash, in this folder (~/mern-ess-kit/cloudlab).
+# Start it:
+#   docker compose --profile mongo up -d
+# Stop it:
+#   docker compose --profile mongo down
+# Stop it and delete its data:
+#   docker compose --profile mongo down -v
+#
+# One profile: mongo. README.md has the ports and the connection string.
+
+name: cloudlab
+
+services:
+  # MongoDB 8.0 as a one-node replica set called rs0.
+  # A replica set is what lets MongoDB run transactions, and RailSeat's bookings need them.
+  mongo:
+    image: mongo:8.0.38
+    profiles: ["mongo"]
+    # --wiredTigerCacheSizeGB 0.5 keeps MongoDB's memory cache small for an 8 GB laptop.
+    command: ["--replSet", "rs0", "--bind_ip_all", "--wiredTigerCacheSizeGB", "0.5"]
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+      - mongo-config:/data/configdb
+    # The health check also starts the replica set the first time, so there is nothing to do by hand.
+    # rs.status() fails until the set exists; then rs.initiate() makes it, with this one member.
+    # The member is called localhost:27017, so a program on your laptop finds it through the
+    # published port. The check passes once this node is the primary (it can take writes).
+    healthcheck:
+      test:
+        - CMD
+        - mongosh
+        - --quiet
+        - --eval
+        - "try { rs.status() } catch (e) { rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'localhost:27017' }] }) }; quit(db.hello().isWritablePrimary ? 0 : 1)"
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 20s
+
+  # Mailpit: catches every email your app sends (SMTP 1025); read them at http://localhost:8025.
+  mailpit:
+    image: axllent/mailpit:v1.34.0
+    profiles: ["mongo"]
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "1"      # accept any SMTP user name and password
+      MP_SMTP_AUTH_ALLOW_INSECURE: "1"  # allow that login without TLS (local only)
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  mongo-data:
+  mongo-config:

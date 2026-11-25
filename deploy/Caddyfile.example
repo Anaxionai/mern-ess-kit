@@ -1,0 +1,33 @@
+# Caddy's settings for your capstone's web image (MERN-ESS kit, deploy/README.md).
+# Copy this file into your web app as capstone/web/Caddyfile:
+#     cp ~/mern-ess-kit/deploy/Caddyfile.example capstone/web/Caddyfile
+# Your web/Dockerfile copies it to /etc/caddy/Caddyfile, and the built app (dist) to /srv.
+#
+# SITE_ADDRESS comes from the web service's environment:
+#   - on your laptop, compose.yml sets SITE_ADDRESS: ":80", so Caddy serves plain HTTP
+#     on port 80 inside the container (http://localhost:8080 from your browser);
+#   - on the server, compose.prod.yml sets it to your DuckDNS name. Caddy then gets a
+#     Let's Encrypt certificate by itself and redirects http:// to https:// (308).
+#
+# AxReview cannot read a file with no extension: quote these lines in evidence.md.
+# Indent with tabs, as `caddy fmt` does.
+
+{$SITE_ADDRESS} {
+	# Compress text answers (HTML, JSON, JavaScript) for slow phone connections.
+	encode gzip
+
+	# Your Express API: /api/health on the site reaches /health in Express.
+	# handle_path removes the /api prefix before it passes the request on.
+	handle_path /api/* {
+		reverse_proxy api:3000
+	}
+
+	# Your React app, built by `npm run build` into /srv.
+	# try_files sends every other path to index.html, so React Router's routes
+	# still work when someone reloads the page.
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

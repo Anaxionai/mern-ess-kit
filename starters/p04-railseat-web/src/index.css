@@ -1,0 +1,30 @@
+/* Plain CSS for the whole app: no CSS framework in this course. Add your
+   styles below as each task asks.
+   TODO(task 10): the seat grid: 4 seats per row on a phone, 8 from 640
+   pixels (a min-width media query), each seat button at least 44 pixels;
+   booked seats grey. */
+
+:root {
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0 auto;
+  max-width: 48rem;
+  padding: 1rem;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
