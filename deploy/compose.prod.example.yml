@@ -1,0 +1,53 @@
+# Changes for the live server only (MERN-ESS kit, deploy/README.md, Part 4).
+# Copy it next to your compose.yml:
+#     cp ~/mern-ess-kit/deploy/compose.prod.example.yml capstone/compose.prod.yml
+#
+# It is an override: Compose reads compose.yml first, then this file on top of it.
+# On the server, in capstone/, always name both files:
+#     docker compose -f compose.yml -f compose.prod.yml up -d --build
+#     docker compose -f compose.yml -f compose.prod.yml ps
+# On your laptop, plain `docker compose up` reads only compose.yml, so local work
+# does not change.
+#
+# The server's capstone/.env (never committed) holds your site's name and new values
+# for your API's secrets, if it has any, for example:
+#     SITE_DOMAIN=<name>.duckdns.org
+#     JWT_SECRET=<a new long random value: openssl rand -hex 32>
+# MongoDB has no password here: no port of db is published, and the security group
+# opens only 22, 80 and 443 (deploy/README.md, "Why MongoDB has no password").
+#
+# Service names (db, api, web) must match your compose.yml.
+
+services:
+  db:
+    # Start again by itself after a crash or a reboot of the server.
+    restart: unless-stopped
+    # The same replica set as on your laptop, with a smaller memory cache:
+    # the t3.small server has 2 GiB for MongoDB, the API, Caddy and Docker together.
+    # (MongoDB's smallest allowed cache is 0.25 GB.)
+    command: ["--replSet", "rs0", "--bind_ip_all", "--wiredTigerCacheSizeGB", "0.5"]
+    # !reset empties any ports list from compose.yml: the database is never on the internet.
+    ports: !reset []
+
+  api:
+    restart: unless-stopped
+    # !reset empties the ports list from compose.yml, so port 3000 is not published.
+    # Only Caddy (in web) is reachable from the internet; it reaches the API as api:3000.
+    ports: !reset []
+
+  web:
+    restart: unless-stopped
+    environment:
+      # The address Caddy serves. A real name turns on automatic HTTPS.
+      SITE_ADDRESS: ${SITE_DOMAIN:?set SITE_DOMAIN in .env}
+    # !override replaces the laptop's 8080:80 with the two web ports.
+    ports: !override
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Caddy keeps its certificate here. Never delete this volume to "retry":
+      # Let's Encrypt gives one name only 5 certificates every 7 days.
+      - caddy-data:/data
+
+volumes:
+  caddy-data:

@@ -1,0 +1,19 @@
+# Made when you run the kit's scripts, tests and starters inside the kit
+node_modules/
+dist/
+coverage/
+test-results/
+playwright-report/
+.angular/
+*.log
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Secrets and local settings: never commit them
+.env
+*.pem
+
+# Data files that the kit's generators write when you run them in the kit's own folders
+data/upi/statement.csv
+data/railseat/scale/
